@@ -1,0 +1,173 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Fundi ChapChap Taveta | Taita Taveta's Trusted Fundis</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@600;700;800&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+body{font-family:'Inter',sans-serif}
+h1,h2,h3{font-family:'Plus Jakarta Sans',sans-serif}
+#map{height:320px;border-radius:18px}
+.glass{backdrop-filter:blur(12px);background:rgba(255,255,255,.85)}
+</style>
+</head>
+<body class="bg-[#f6fbf7]">
+<header class="relative overflow-hidden">
+<div class="absolute inset-0">
+<img src="https://images.unsplash.com/photo-1528164344705-47542687000d?q=80&w=1920&auto=format&fit=crop" class="w-full h-full object-cover" alt="Taveta">
+<div class="absolute inset-0 bg-gradient-to-br from-emerald-950/90 via-emerald-800/80 to-lime-600/70"></div>
+</div>
+<nav class="relative z-10 flex justify-between items-center px-6 py-4 max-w-7xl mx-auto">
+<div class="flex items-center gap-3">
+<div class="w-10 h-10 rounded-xl bg-white flex items-center justify-center font-black text-emerald-700">FC</div>
+<span class="text-white font-extrabold tracking-tight">FUNDI CHAPCHAP</span>
+</div>
+<div class="flex gap-2">
+<button onclick="locateMe()" class="bg-white/20 text-white border border-white/30 px-4 py-2 rounded-full text-sm font-semibold hover:bg-white hover:text-emerald-800 transition">📍 Use My Location</button>
+<button onclick="openAdmin()" class="bg-white text-emerald-800 px-5 py-2 rounded-full text-sm font-bold">Admin</button>
+</div>
+</nav>
+<div class="relative z-10 max-w-7xl mx-auto px-6 pb-16 pt-10 grid lg:grid-cols-2 gap-10 items-center">
+<div>
+<div class="inline-flex items-center gap-2 bg-white/15 border border-white/20 text-white px-3 py-1 rounded-full text-xs">🇰🇪 Taveta Town • Taita Taveta County • Live</div>
+<h1 class="text-5xl lg:text-6xl font-extrabold text-white leading-[0.9] mt-4">PATA FUNDI<br><span class="text-[#d8ff6a]">IN 2 MINUTES</span></h1>
+<p class="text-white/80 mt-4 text-lg max-w-xl">Verified local fundis. Real photos. Live GPS distance. Call or WhatsApp instantly. Built for Taveta by MWABILI CODE LAB.</p>
+<div class="mt-6 flex gap-3">
+<div class="glass rounded-2xl px-5 py-3 flex gap-6 text-sm">
+<div><div class="font-bold text-emerald-800 text-lg" id="totalCount">11</div><div class="text-gray-500 -mt-1">Active Fundis</div></div>
+<div class="w-px bg-gray-200"></div>
+<div><div class="font-bold text-emerald-800 text-lg">24/7</div><div class="text-gray-500 -mt-1">Available</div></div>
+<div class="w-px bg-gray-200"></div>
+<div><div class="font-bold text-emerald-800 text-lg">4.9</div><div class="text-gray-500 -mt-1">Rating</div></div>
+</div>
+</div>
+<div class="mt-6 flex">
+<input id="search" oninput="render()" placeholder="Search fundi, skill, area..." class="w-full max-w-md px-5 py-3.5 rounded-full outline-none text-[15px] shadow-xl">
+</div>
+</div>
+<div class="glass rounded-[22px] p-3 shadow-2xl">
+<div id="map"></div>
+<div class="p-3 flex justify-between text-xs text-gray-600"><span id="locStatus">📍 Taveta Town Center</span><span>Powered by GPS</span></div>
+</div>
+</div>
+</header>
+
+<div class="max-w-7xl mx-auto px-6 -mt-8 relative z-20">
+<div id="catBar" class="flex gap-2 overflow-x-auto pb-2"></div>
+</div>
+
+<main class="max-w-7xl mx-auto px-6 py-8">
+<div id="grid" class="grid sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-5"></div>
+</main>
+
+<div id="adminModal" class="fixed inset-0 bg-black/60 hidden z-50 flex items-center justify-center p-4">
+<div class="bg-white rounded-[20px] w-full max-w-lg p-6 shadow-2xl max-h-[90vh] overflow-auto">
+<div class="flex justify-between items-center mb-4">
+<h2 class="text-xl font-bold">Admin Dashboard</h2>
+<button onclick="closeAdmin()" class="w-8 h-8 rounded-full bg-gray-100">✕</button>
+</div>
+<div id="loginBox">
+<input id="adminPass" type="password" placeholder="Enter Admin Password (1234)" class="w-full border px-4 py-3 rounded-xl">
+<button onclick="checkPass()" class="mt-3 w-full bg-emerald-700 text-white py-3 rounded-xl font-bold">Login</button>
+</div>
+<div id="dashBox" class="hidden">
+<div class="grid grid-cols-2 gap-2 mb-4">
+<input id="fName" placeholder="Jina la Fundi" class="border px-3 py-2.5 rounded-xl text-sm">
+<select id="fCat" class="border px-3 py-2.5 rounded-xl text-sm">
+<option>Mjengo</option><option>Plumber</option><option>Electrician</option><option>Saloonist</option><option>Mechanic</option><option>WiFi Technician</option><option>Fundi Simu</option><option>Fundi Rangi</option><option>Tiles</option><option>Gypsum</option><option>Boda Boda</option>
+</select>
+<input id="fArea" placeholder="Area e.g Taveta Market" class="border px-3 py-2.5 rounded-xl text-sm">
+<input id="fPhone" placeholder="Phone 07xx" class="border px-3 py-2.5 rounded-xl text-sm">
+<input id="fSkills" placeholder="Skills e.g wiring, painting" class="border col-span-2 px-3 py-2.5 rounded-xl text-sm">
+<input id="fRate" placeholder="Rate e.g 1500/day" class="border px-3 py-2.5 rounded-xl text-sm">
+<input id="fLat" placeholder="Lat -3.39" class="border px-3 py-2.5 rounded-xl text-sm">
+<input id="fLng" placeholder="Lng 37.68" class="border px-3 py-2.5 rounded-xl text-sm">
+<select id="fIcon" class="border px-3 py-2.5 rounded-xl text-sm">
+<option value="👷">👷 Mjengo</option><option value="🔧">🔧 Plumber</option><option value="⚡">⚡ Stima</option><option value="💇‍♀️">💇 Saloon</option><option value="🔩">🔩 Mechanic</option><option value="📶">📶 WiFi</option><option value="📱">📱 Simu</option><option value="🎨">🎨 Rangi</option><option value="🧱">🧱 Tiles</option><option value="🏠">🏠 Gypsum</option><option value="🏍️">🏍️ Boda</option>
+</select>
+</div>
+<button onclick="addFundi()" class="w-full bg-emerald-700 text-white py-3 rounded-xl font-bold">+ Add Fundi</button>
+<button onclick="exportData()" class="mt-3 w-full border py-2 rounded-xl text-sm">Export JSON</button>
+<button onclick="clearAll()" class="mt-2 w-full border border-red-200 text-red-600 py-2 rounded-xl text-sm">Clear All</button>
+</div>
+</div>
+</div>
+
+<script>
+const TAVETA=[-3.396,37.684];
+let userPos=null;
+let map=L.map('map').setView(TAVETA,14);
+L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',{maxZoom:19}).addTo(map);
+L.marker(TAVETA).addTo(map).bindPopup("Taveta Town Center").openPopup();
+const defaultFundis=[
+{name:"Juma Mjengo Pro",cat:"Mjengo",area:"Taveta Town",phone:"0758141538",skills:"Mjengo, plaster, foundation",rate:"2000/day",lat:-3.395,lng:37.685,icon:"👷"},
+{name:"Fundi Plumber Taveta",cat:"Plumber",area:"Challa",phone:"0758141538",skills:"Pipes, tanks, drainage",rate:"1500/job",lat:-3.39,lng:37.68,icon:"🔧"},
+{name:"Power Electric",cat:"Electrician",area:"Taveta Market",phone:"0758141538",skills:"Wiring, solar, lights",rate:"1200/day",lat:-3.398,lng:37.69,icon:"⚡"},
+{name:"Neema Beauty",cat:"Saloonist",area:"Taveta Town",phone:"0758141538",skills:"Braids, nails, makeup",rate:"500",lat:-3.397,lng:37.683,icon:"💇‍♀️"},
+{name:"Taveta Garage",cat:"Mechanic",area:"Voi Road",phone:"0758141538",skills:"Engine, brakes, service",rate:"1000",lat:-3.392,lng:37.682,icon:"🔩"},
+{name:"TavLink WiFi",cat:"WiFi Technician",area:"Taveta",phone:"0758141538",skills:"WiFi, router, cctv",rate:"800",lat:-3.4,lng:37.688,icon:"📶"},
+{name:"Simu Tech",cat:"Fundi Simu",area:"Taveta Town",phone:"0758141538",skills:"Screen, battery, software",rate:"500",lat:-3.3965,lng:37.6845,icon:"📱"},
+{name:"Color Masters",cat:"Fundi Rangi",area:"Taveta",phone:"0758141538",skills:"Painting, spray",rate:"1500/day",lat:-3.393,lng:37.686,icon:"🎨"},
+{name:"Tiles Expert",cat:"Tiles",area:"Mwatate Rd",phone:"0758141538",skills:"Floor tiles, wall",rate:"2000/day",lat:-3.391,lng:37.687,icon:"🧱"},
+{name:"Gypsum Elite",cat:"Gypsum",area:"Taveta",phone:"0758141538",skills:"Ceiling, partitions",rate:"2500/day",lat:-3.399,lng:37.681,icon:"🏠"},
+{name:"Boda ChapChap",cat:"Boda Boda",area:"Stage",phone:"0758141538",skills:"Delivery, transport",rate:"200",lat:-3.396,lng:37.684,icon:"🏍️"},
+];
+function getFundis(){try{const s=localStorage.getItem('taveta_fundis');return s?JSON.parse(s):defaultFundis}catch{return defaultFundis}}
+function saveFundis(a){localStorage.setItem('taveta_fundis',JSON.stringify(a))}
+let fundis=getFundis();let markers=[];let activeCat='All';
+const cats=['All','Mjengo','Plumber','Electrician','Saloonist','Mechanic','WiFi Technician','Fundi Simu','Fundi Rangi','Tiles','Gypsum','Boda Boda'];
+const catBar=document.getElementById('catBar');
+cats.forEach(c=>{
+const b=document.createElement('button');
+b.className=`whitespace-nowrap px-4 py-2 rounded-full text-sm font-semibold border transition ${c==='All'?'bg-emerald-700 text-white border-emerald-700':'bg-white border-gray-200 text-gray-700'}`;
+b.textContent=c;
+b.onclick=()=>{activeCat=c;document.querySelectorAll('#catBar button').forEach(x=>x.className='whitespace-nowrap px-4 py-2 rounded-full text-sm font-semibold border transition bg-white border-gray-200 text-gray-700');b.className='whitespace-nowrap px-4 py-2 rounded-full text-sm font-semibold border transition bg-emerald-700 text-white border-emerald-700';render();};
+catBar.appendChild(b);
+});
+function distance(lat1,lon1,lat2,lon2){const R=6371;const dLat=(lat2-lat1)*Math.PI/180;const dLon=(lon2-lon1)*Math.PI/180;const a=Math.sin(dLat/2)**2+Math.cos(lat1*Math.PI/180)*Math.cos(lat2*Math.PI/180)*Math.sin(dLon/2)**2;return(R*2*Math.atan2(Math.sqrt(a),Math.sqrt(1-a))).toFixed(1);}
+function render(){
+const q=document.getElementById('search').value.toLowerCase();
+const grid=document.getElementById('grid');
+markers.forEach(m=>map.removeLayer(m));markers=[];
+let filtered=fundis.filter(f=>{
+const matchCat=activeCat==='All'||f.cat===activeCat;
+const matchQ=!q||f.name.toLowerCase().includes(q)||f.skills.toLowerCase().includes(q)||f.area.toLowerCase().includes(q)||f.cat.toLowerCase().includes(q);
+return matchCat&&matchQ;
+});
+document.getElementById('totalCount').textContent=filtered.length;
+grid.innerHTML=filtered.map(f=>{
+let dist='';if(userPos){dist=`${distance(userPos[0],userPos[1],f.lat,f.lng)} km away`;}else{dist=`📍 ${f.area}`;}
+return `<div class="bg-white rounded-[18px] p-4 shadow border border-gray-100"><div class="flex gap-3"><div class="w-12 h-12 rounded-xl bg-emerald-50 flex items-center justify-center text-xl">${f.icon}</div><div class="flex-1"><div class="flex justify-between"><h3 class="font-bold text-[15px]">${f.name}</h3><span class="text-[10px] px-2 py-1 rounded-full bg-emerald-50 text-emerald-700 font-bold">${f.cat}</span></div><div class="text-xs text-gray-500 mt-0.5">${dist} • ${f.rate}</div><div class="mt-2 flex flex-wrap gap-1">${f.skills.split(',').map(s=>`<span class="text-[10px] bg-gray-50 border px-2 py-1 rounded-full">${s.trim()}</span>`).join('')}</div></div></div><div class="mt-4 grid grid-cols-2 gap-2"><a href="tel:${f.phone}" class="text-center bg-gray-900 text-white py-2.5 rounded-xl text-sm font-semibold">Call</a><a href="https://wa.me/254${f.phone.slice(1)}?text=Habari ${f.name}, nataka ${f.cat} Taveta" target="_blank" class="text-center bg-[#25D366] text-white py-2.5 rounded-xl text-sm font-semibold">WhatsApp</a></div></div>`;
+}).join('')||`<div class="col-span-full text-center py-16 text-gray-400">No fundi found</div>`;
+filtered.forEach(f=>{const m=L.marker([f.lat,f.lng]).addTo(map).bindPopup(`<b>${f.name}</b><br>${f.cat}`);markers.push(m);});
+}
+function locateMe(){
+if(!navigator.geolocation){alert('GPS not supported');return;}
+document.getElementById('locStatus').textContent='Locating...';
+navigator.geolocation.getCurrentPosition(p=>{
+userPos=[p.coords.latitude,p.coords.longitude];
+map.setView(userPos,15);
+L.marker(userPos).addTo(map).bindPopup("You are here").openPopup();
+document.getElementById('locStatus').textContent=`You: ${userPos[0].toFixed(4)}, ${userPos[1].toFixed(4)}`;
+render();
+},()=>{document.getElementById('locStatus').textContent='Location denied';});
+}
+function openAdmin(){document.getElementById('adminModal').classList.remove('hidden');}
+function closeAdmin(){document.getElementById('adminModal').classList.add('hidden');}
+function checkPass(){if(document.getElementById('adminPass').value==='1234'){document.getElementById('loginBox').classList.add('hidden');document.getElementById('dashBox').classList.remove('hidden');}else{alert('Wrong password. Use 1234');}}
+function addFundi(){
+const n=document.getElementById('fName').value,c=document.getElementById('fCat').value,a=document.getElementById('fArea').value,ph=document.getElementById('fPhone').value,sk=document.getElementById('fSkills').value,ra=document.getElementById('fRate').value,la=parseFloat(document.getElementById('fLat').value)||TAVETA[0],ln=parseFloat(document.getElementById('fLng').value)||TAVETA[1],ic=document.getElementById('fIcon').value;
+if(!n||!ph){alert('Jina na phone required');return;}
+fundis.unshift({name:n,cat:c,area:a||'Taveta Town',phone:ph,skills:sk||c,rate:ra||'Negotiable',lat:la,lng:ln,icon:ic});
+saveFundis(fundis);render();alert('Fundi added!');closeAdmin();
+}
+function exportData(){const blob=new Blob([JSON.stringify(fundis,null,2)],{type:'application/json'});const url=URL.createObjectURL(blob);const a=document.createElement('a');a.href=url;a.download='taveta-fundis.json';a.click();}
+function clearAll(){if(confirm('Clear all?')){localStorage.removeItem('taveta_fundis');fundis=[...defaultFundis];render();}}
+render();
+</script>
+</body>
+  </html>
